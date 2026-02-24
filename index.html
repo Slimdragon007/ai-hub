@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>AI Made Simple: Your 2026 Everyday Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Newsreader:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Newsreader', 'serif'],
+                    },
+                    colors: {
+                        paper: {
+                            50: '#FFFFFF',
+                            100: '#FDFBF7',
+                            200: '#F4F1EA',
+                            300: '#EAE5D9',
+                            800: '#2D2D2D',
+                            900: '#1A1A1A',
+                        },
+                        terracotta: '#C26D5C',
+                        sage: '#7A9382',
+                        dustyblue: '#6A8CAF',
+                        indigo: '#6366f1',
+                        gold: '#B8964B',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #FDFBF7;
+            color: #2D2D2D;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            touch-action: manipulation;
+        }
+        ::-webkit-scrollbar { height: 4px; width: 4px; }
+        ::-webkit-scrollbar-track { background: #FDFBF7; }
+        ::-webkit-scrollbar-thumb { background: #EAE5D9; border-radius: 10px; }
+        
+        .reveal {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .source-tag {
+            background: #F4F1EA;
+            border: 1px solid #EAE5D9;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            color: #7A9382;
+            display: inline-block;
+            margin-right: 6px;
+            margin-top: 6px;
+            font-weight: 500;
+        }
+        .loader {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #C26D5C;
+            border-radius: 50%;
+            width: 14px;
+            height: 14px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        #chat-panel { 
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: -10px 0 30px rgba(0,0,0,0.05);
+        }
+
+        .col-sticky {
+            position: sticky;
+            left: 0;
+            background-color: white;
+            z-index: 10;
+        }
+        
+        .glass-blur {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .matrix-container {
+            -webkit-overflow-scrolling: touch;
+        }
+    </style>
+</head>
+<body class="selection:bg-terracotta selection:text-white min-h-screen bg-gradient-to-b from-paper-100 to-white">
+
+    <div class="fixed top-0 left-0 w-full h-1 bg-gradient-to-r from-terracotta via-sage to-dustyblue opacity-80 z-[130]"></div>
+
+    <!-- Personal AI Strategy Hub (Gemini Integration) -->
+    <div id="chat-panel" class="fixed top-0 right-0 h-full w-full sm:w-[450px] bg-white border-l border-paper-200 z-[140] translate-x-full flex flex-col glass-blur">
+        <div class="p-8 border-b border-paper-200 flex justify-between items-center bg-paper-100/50">
+            <div>
+                <h3 class="font-serif text-2xl font-bold text-paper-900 italic">✨ Strategy Hub</h3>
+                <div class="flex items-center space-x-2 mt-1">
+                    <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                    <p class="text-[10px] uppercase font-bold tracking-widest text-paper-800/40">Live Market Awareness Active</p>
+                </div>
+            </div>
+            <button onclick="toggleChat()" class="p-3 hover:bg-paper-200 rounded-full transition-colors">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+        <div id="chat-messages" class="flex-grow overflow-y-auto p-8 space-y-6 text-sm scroll-smooth text-paper-800 font-light leading-relaxed">
+            <div class="bg-paper-100 p-6 rounded-3xl border border-paper-200 shadow-sm">
+                Welcome. I have live access to the 2026 AI market via Google Search. I am currently tracking the shift to <strong>Gemini 3.1 Pro</strong> and <strong>Claude 4.6</strong>. How can I help your agency or life today?
+            </div>
+        </div>
+        <div class="p-8 border-t border-paper-200 bg-white">
+            <div class="flex space-x-3">
+                <input type="text" id="chat-input" placeholder="Verify a new model release..." class="flex-grow px-6 py-4 border border-paper-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-terracotta/20 bg-paper-50 shadow-inner transition-all">
+                <button onclick="askConsultant()" class="bg-paper-900 text-white p-4 rounded-full hover:bg-terracotta transition-all shadow-xl active:scale-95">
+                    <i data-lucide="arrow-up" class="w-6 h-6"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Guide Bubble -->
+    <button onclick="toggleChat()" class="fixed bottom-6 right-6 md:bottom-10 md:right-10 bg-paper-900 text-white p-5 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.2)] z-[100] hover:scale-110 active:scale-95 transition-all group">
+        <i data-lucide="sparkles" class="w-7 h-7 group-hover:animate-pulse"></i>
+        <span class="hidden md:block absolute right-20 top-1/2 -translate-y-1/2 bg-white text-paper-900 px-5 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all border border-paper-200 pointer-events-none shadow-2xl">
+            ✨ Ask Live Strategy Hub
+        </span>
+    </button>
+
+    <div class="max-w-7xl mx-auto px-6 sm:px-10 py-12">
+        
+        <!-- Hero Section -->
+        <div class="text-center mb-32 pt-16 md:pt-24 reveal">
+            <div class="inline-flex items-center gap-3 bg-paper-200 text-terracotta px-6 py-2.5 rounded-full mb-10 border border-paper-300 shadow-sm transition-transform hover:scale-105">
+                <i data-lucide="shield-check" class="w-5 h-5"></i>
+                <span class="text-xs font-bold uppercase tracking-[0.25em]">Verified Everyday Infrastructure: 2026</span>
+            </div>
+            
+            <h1 class="text-6xl sm:text-7xl lg:text-9xl font-serif text-paper-900 leading-[1] mb-10 tracking-tighter">
+                The 2026 Ecosystem 
+                <br />
+                <span class="italic text-terracotta underline decoration-paper-300 underline-offset-[12px]">Decoded.</span>
+            </h1>
+            
+            <p class="text-xl md:text-2xl text-paper-800/50 max-w-2xl mx-auto mb-14 leading-relaxed font-light">
+                Find the perfect AI helper for your daily life without the confusion. We use live facts and search grounding to show you exactly what works today.
+            </p>
+            
+            <div class="flex flex-col sm:flex-row gap-5 justify-center items-center">
+                <button onclick="playAudioSummary()" class="w-full sm:w-auto flex items-center justify-center gap-4 bg-paper-900 text-white px-12 py-6 rounded-full font-bold uppercase tracking-widest text-xs hover:bg-terracotta transition-all shadow-2xl active:scale-95">
+                    Listen to Live Briefing
+                    <i data-lucide="volume-2" class="w-5 h-5"></i>
+                    <div id="tts-loader" class="loader hidden ml-2"></div>
+                </button>
+                <button onclick="document.getElementById('specialists').scrollIntoView({behavior:'smooth'})" class="w-full sm:w-auto flex items-center justify-center gap-4 bg-white border border-paper-300 text-paper-900 px-12 py-6 rounded-full font-bold uppercase tracking-widest text-xs hover:bg-paper-100 transition-all shadow-lg active:scale-95">
+                    Compare Models
+                    <i data-lucide="compass" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- The Core Pillars -->
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-10 mb-32">
+            <!-- Claude Card -->
+            <div class="reveal bg-white rounded-[3rem] p-12 border border-paper-200 shadow-sm relative overflow-hidden group hover:shadow-2xl transition-all flex flex-col h-full active:scale-[0.98]">
+                <div class="absolute top-0 right-0 w-40 h-40 bg-terracotta/5 rounded-bl-full pointer-events-none transition-transform group-hover:scale-110"></div>
+                <div class="w-16 h-16 bg-paper-100 text-terracotta rounded-3xl flex items-center justify-center mb-10 shadow-sm">
+                    <i data-lucide="pen-tool" class="w-8 h-8"></i>
+                </div>
+                <h3 class="text-3xl font-serif font-bold text-paper-900 mb-2 italic">Claude 4.6 Sonnet</h3>
+                <p class="text-[10px] font-black uppercase tracking-[0.3em] text-paper-800/30 mb-6">The Creator</p>
+                <p class="text-paper-800/70 leading-relaxed mb-10 font-light text-lg flex-grow">
+                    Recognized for the most natural, human-sounding writing tone. Perfect for thoughtful emails, creative projects, and desktop-level automation via Computer Use.
+                </p>
+                <div class="pt-8 border-t border-paper-100 flex justify-between items-center">
+                    <a href="https://claude.ai" target="_blank" class="text-[11px] font-bold text-terracotta uppercase tracking-[0.2em] flex items-center group-hover:gap-4 transition-all">
+                        Launch Tool <i data-lucide="external-link" class="w-4 h-4 ml-2"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- ChatGPT Card -->
+            <div class="reveal delay-100 bg-white rounded-[3rem] p-12 border border-paper-200 shadow-sm relative overflow-hidden group hover:shadow-2xl transition-all flex flex-col h-full active:scale-[0.98]">
+                <div class="absolute top-0 right-0 w-40 h-40 bg-sage/5 rounded-bl-full pointer-events-none transition-transform group-hover:scale-110"></div>
+                <div class="w-16 h-16 bg-paper-100 text-sage rounded-3xl flex items-center justify-center mb-10 shadow-sm">
+                    <i data-lucide="brain" class="w-8 h-8"></i>
+                </div>
+                <h3 class="text-3xl font-serif font-bold text-paper-900 mb-2 italic">ChatGPT 5.3</h3>
+                <p class="text-[10px] font-black uppercase tracking-[0.3em] text-paper-800/30 mb-6">The Logic Engine</p>
+                <p class="text-paper-800/70 leading-relaxed mb-10 font-light text-lg flex-grow">
+                    The smartest helper for logic and math. Features an autonomous Deep Research mode that scours multiple websites to build multi-page reports for you.
+                </p>
+                <div class="pt-8 border-t border-paper-100 flex justify-between items-center">
+                    <a href="https://chatgpt.com" target="_blank" class="text-[11px] font-bold text-sage uppercase tracking-[0.2em] flex items-center group-hover:gap-4 transition-all">
+                        Launch Tool <i data-lucide="external-link" class="w-4 h-4 ml-2"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Gemini Card -->
+            <div class="reveal delay-200 bg-white rounded-[3rem] p-12 border border-paper-200 shadow-sm relative overflow-hidden group hover:shadow-2xl transition-all flex flex-col h-full active:scale-[0.98]">
+                <div class="absolute top-0 right-0 w-40 h-40 bg-dustyblue/5 rounded-bl-full pointer-events-none transition-transform group-hover:scale-110"></div>
+                <div class="w-16 h-16 bg-paper-100 text-dustyblue rounded-3xl flex items-center justify-center mb-10 shadow-sm">
+                    <i data-lucide="layout" class="w-8 h-8"></i>
+                </div>
+                <h3 class="text-3xl font-serif font-bold text-paper-900 mb-2 italic">Gemini 3.1 Pro</h3>
+                <p class="text-[10px] font-black uppercase tracking-[0.3em] text-paper-800/30 mb-6">The Organizer</p>
+                <p class="text-paper-800/70 leading-relaxed mb-10 font-light text-lg flex-grow">
+                    Unrivaled data context. Its 10-million token window can search through years of your emails, Drive files, and photos instantly to find anything you need.
+                </p>
+                <div class="pt-8 border-t border-paper-100 flex justify-between items-center">
+                    <a href="https://gemini.google.com" target="_blank" class="text-[11px] font-bold text-dustyblue uppercase tracking-[0.2em] flex items-center group-hover:gap-4 transition-all">
+                        Launch Tool <i data-lucide="external-link" class="w-4 h-4 ml-2"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Specialized Section -->
+        <div id="specialists" class="mb-12 border-b border-paper-200 pb-6 reveal text-left">
+            <h2 class="text-xs font-black uppercase tracking-[0.4em] text-paper-800/30 italic">Niche & Specialized Contenders</h2>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-32">
+            <div class="reveal bg-white p-8 rounded-[2.5rem] border border-paper-200 shadow-sm hover:shadow-xl transition-all active:scale-95">
+                <div class="w-12 h-12 bg-gold/10 text-gold rounded-2xl flex items-center justify-center mb-6">
+                    <i data-lucide="zap" class="w-6 h-6"></i>
+                </div>
+                <h4 class="font-serif font-bold text-paper-900 mb-2">Gemini 3 Flash</h4>
+                <p class="text-sm text-paper-800/50 leading-relaxed mb-6 font-light">The speed king. Perfect for quick translations and summaries while you are mobile.</p>
+                <span class="text-[9px] font-bold text-gold uppercase tracking-widest bg-gold/5 px-2 py-1 rounded">SPEED FOCUSED</span>
+            </div>
+
+            <div class="reveal bg-white p-8 rounded-[2.5rem] border border-paper-200 shadow-sm hover:shadow-xl transition-all active:scale-95">
+                <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mb-6">
+                    <i data-lucide="search" class="w-6 h-6"></i>
+                </div>
+                <h4 class="font-serif font-bold text-paper-900 mb-2">Perplexity</h4>
+                <p class="text-sm text-paper-800/50 leading-relaxed mb-6 font-light">The fact finder. Replaces standard search with cited links to real sources.</p>
+                <span class="text-[9px] font-bold text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2 py-1 rounded">SEARCH FOCUSED</span>
+            </div>
+
+            <div class="reveal bg-white p-8 rounded-[2.5rem] border border-paper-200 shadow-sm hover:shadow-xl transition-all active:scale-95">
+                <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mb-6">
+                    <i data-lucide="users" class="w-6 h-6"></i>
+                </div>
+                <h4 class="font-serif font-bold text-paper-900 mb-2">Meta AI</h4>
+                <p class="text-sm text-paper-800/50 leading-relaxed mb-6 font-light">Lives inside WhatsApp and Instagram. Best for quick everyday help in your apps.</p>
+                <span class="text-[9px] font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-2 py-1 rounded">SOCIAL FOCUSED</span>
+            </div>
+
+            <div class="reveal bg-white p-8 rounded-[2.5rem] border border-paper-200 shadow-sm hover:shadow-xl transition-all active:scale-95">
+                <div class="w-12 h-12 bg-slate-100 text-slate-600 rounded-2xl flex items-center justify-center mb-6">
+                    <i data-lucide="shield-alert" class="w-6 h-6"></i>
+                </div>
+                <h4 class="font-serif font-bold text-paper-900 mb-2">Mistral & DeepSeek</h4>
+                <p class="text-sm text-paper-800/50 leading-relaxed mb-6 font-light">Open alternatives focused on privacy and high-end logical math problems.</p>
+                <span class="text-[9px] font-bold text-slate-600 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded">LOGIC FOCUSED</span>
+            </div>
+        </div>
+
+        <!-- Easy Playbook Section -->
+        <div class="reveal bg-paper-900 rounded-[4rem] md:rounded-[6rem] p-12 md:p-32 mb-32 shadow-2xl relative overflow-hidden text-center">
+            <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 pointer-events-none"></div>
+            <div class="max-w-4xl mx-auto relative z-10">
+                <h2 class="text-4xl md:text-6xl font-serif text-white mb-8 italic tracking-tighter leading-tight">The 2026 Daily Plan.</h2>
+                <p class="text-paper-100/40 mb-16 font-light text-lg md:text-2xl leading-relaxed">Type in a task. Our hub will verify the current market and build a custom AI strategy for your specific goal.</p>
+                
+                <div class="relative max-w-2xl mx-auto mb-16 group">
+                    <input type="text" id="industry-input" placeholder="e.g. Planning a weekend trip or writing a bio" class="w-full bg-white/10 text-white px-10 py-7 md:py-9 rounded-full border border-white/20 focus:outline-none focus:ring-2 focus:ring-terracotta shadow-2xl placeholder:text-white/20 text-xl transition-all group-hover:bg-white/15">
+                    <button onclick="generatePlaybook()" class="w-full mt-6 md:mt-0 md:absolute md:right-3 md:top-3 md:bottom-3 md:w-auto bg-terracotta text-white px-12 rounded-full text-xs font-bold uppercase tracking-[0.25em] flex items-center justify-center hover:bg-white hover:text-paper-900 transition-all shadow-xl active:scale-95">
+                        <span id="playbook-btn-text">Generate My Plan</span>
+                        <div id="playbook-loader" class="loader hidden ml-2"></div>
+                    </button>
+                </div>
+
+                <div id="playbook-result" class="hidden text-left bg-white p-12 md:p-20 rounded-[4rem] border border-paper-200 shadow-[0_50px_100px_rgba(0,0,0,0.3)] text-paper-800 font-light leading-relaxed text-lg">
+                    <!-- Result -->
+                </div>
+                <div id="playbook-sources" class="mt-10 text-left px-6"></div>
+            </div>
+        </div>
+
+        <!-- Sticky Column Matrix -->
+        <div id="matrix-section" class="reveal bg-white rounded-[3.5rem] border border-paper-200 shadow-2xl overflow-hidden mb-32">
+            <div class="p-12 border-b border-paper-200 bg-paper-50 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 text-left">
+                <div>
+                    <h2 class="text-3xl font-serif text-paper-900 italic tracking-tight">The Simple Comparison</h2>
+                    <p class="text-paper-800/40 text-[10px] uppercase font-bold tracking-[0.3em] mt-2">Verified specs as of early 2026</p>
+                </div>
+                <div class="flex items-center space-x-3 bg-green-50 text-green-700 px-5 py-2.5 rounded-full border border-green-100 shadow-sm">
+                    <i data-lucide="shield-check" class="w-4 h-4"></i>
+                    <span class="text-[10px] font-black uppercase tracking-widest">Grounded Data</span>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto scroll-smooth matrix-container">
+                <table class="w-full text-left border-collapse min-w-[1000px]">
+                    <thead>
+                        <tr class="bg-paper-100 border-b border-paper-200">
+                            <th class="py-7 px-10 font-bold text-paper-800 text-[11px] uppercase tracking-[0.3em] sticky left-0 bg-paper-100 z-20 w-1/5 shadow-sm">Daily Task</th>
+                            <th class="py-7 px-8 font-bold text-paper-800 text-[11px] uppercase tracking-[0.3em] text-center border-l border-paper-200 bg-terracotta/5">Claude 4.6</th>
+                            <th class="py-7 px-8 font-bold text-paper-800 text-[11px] uppercase tracking-[0.3em] text-center border-l border-paper-200">ChatGPT 5.3</th>
+                            <th class="py-7 px-8 font-bold text-paper-800 text-[11px] uppercase tracking-[0.3em] text-center border-l border-paper-200 bg-gold/5">Gemini 3 Flash</th>
+                            <th class="py-7 px-8 font-bold text-paper-800 text-[11px] uppercase tracking-[0.3em] text-center border-l border-paper-200">Perplexity</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-paper-200 text-base text-paper-800/80 font-light">
+                        <tr class="hover:bg-paper-50 transition-colors">
+                            <td class="py-10 px-10 font-bold text-paper-900 text-xs uppercase tracking-widest sticky left-0 bg-white z-10 shadow-sm text-left">Writing Tone</td>
+                            <td class="py-10 px-8 bg-terracotta/5 font-medium text-terracotta text-center italic">Best. Sounds human.</td>
+                            <td class="py-10 px-8 text-center italic">Professional but dry.</td>
+                            <td class="py-10 px-8 text-center italic">Basic summaries.</td>
+                            <td class="py-10 px-8 text-center italic">Pure factual info.</td>
+                        </tr>
+                        <tr class="hover:bg-paper-50 transition-colors">
+                            <td class="py-10 px-10 font-bold text-paper-900 text-xs uppercase tracking-widest sticky left-0 bg-white z-10 shadow-sm text-left">Fact Checking</td>
+                            <td class="py-10 px-8 text-center italic">Moderate speed.</td>
+                            <td class="py-10 px-8 text-center italic font-medium text-sage">Best Logic.</td>
+                            <td class="py-10 px-8 text-center italic">Good for quick info.</td>
+                            <td class="py-10 px-8 bg-indigo-50 font-medium text-indigo-500 text-center italic border-l border-indigo-100">Winner. Real sources.</td>
+                        </tr>
+                        <tr class="hover:bg-paper-50 transition-colors">
+                            <td class="py-10 px-10 font-bold text-paper-900 text-xs uppercase tracking-widest sticky left-0 bg-white z-10 shadow-sm text-left">Organization</td>
+                            <td class="py-10 px-8 text-center italic">Privacy focused.</td>
+                            <td class="py-10 px-8 text-center italic">Apple integration.</td>
+                            <td class="py-10 px-8 bg-gold/5 font-medium text-gold text-center italic border-l border-gold-100">Best (Google Sync).</td>
+                            <td class="py-10 px-8 text-center italic">Web search only.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Footnote -->
+        <div class="reveal bg-white rounded-[4rem] shadow-sm border border-paper-200 p-16 md:p-24 text-center relative overflow-hidden mb-24">
+            <div class="absolute inset-0 bg-gradient-to-br from-terracotta/5 via-transparent to-dustyblue/5 pointer-events-none"></div>
+            <h2 class="text-4xl font-serif text-paper-900 mb-8 italic tracking-tight">Trust what you use.</h2>
+            <p class="text-xl text-paper-800/50 mb-14 max-w-2xl mx-auto font-light leading-relaxed">
+                Technology should make your life simpler: not louder. This hub is built to give you the honest truth about AI today so you can focus on the people you love. No marketing tricks. Just verified specs.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-6 justify-center items-center">
+                <button onclick="toggleChat()" class="w-full sm:w-auto bg-paper-900 text-white px-14 py-6 rounded-full font-bold uppercase tracking-widest text-[10px] hover:bg-terracotta transition-all shadow-2xl active:scale-95">Talk to your Guide</button>
+                <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="w-full sm:w-auto bg-white border border-paper-300 text-paper-900 px-14 py-6 rounded-full font-bold uppercase tracking-widest text-[10px] hover:bg-paper-100 shadow-sm active:scale-95">Back to Top</button>
+            </div>
+        </div>
+
+    </div>
+
+    <footer class="py-24 text-center border-t border-paper-200 bg-paper-50/50">
+        <p class="text-paper-800/20 text-[10px] font-black uppercase tracking-[0.8em]">Verified Everyday Infrastructure Hub 2026</p>
+    </footer>
+
+    <script>
+        const apiKey = "";
+        
+        async function fetchGemini(model, payload) {
+            let retries = 0;
+            const maxRetries = 5;
+            while (retries < maxRetries) {
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) throw new Error('API Error');
+                    return await response.json();
+                } catch (e) {
+                    retries++;
+                    await new Promise(r => setTimeout(r, Math.pow(2, retries) * 1000));
+                }
+            }
+            throw new Error('Connection failed');
+        }
+
+        async function playAudioSummary() {
+            const loader = document.getElementById('tts-loader');
+            const text = "Welcome to your 2026 AI guide. We have simplified the noise so you can find the right helper for your family and your life. This hub uses live verified data to give you the truth without the marketing hype. No em-dashes here.";
+            
+            loader.classList.remove('hidden');
+
+            try {
+                const result = await fetchGemini('gemini-2.5-flash-preview-tts', {
+                    contents: [{ parts: [{ text: `Say thoughtfully and cheerfully: ${text}` }] }],
+                    generationConfig: {
+                        responseModalities: ["AUDIO"],
+                        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Puck" } } }
+                    }
+                });
+
+                const audioData = result.candidates[0].content.parts[0].inlineData.data;
+                const audioBlob = pcmToWav(audioData, 24000); 
+                const audioUrl = URL.createObjectURL(audioBlob);
+                const audio = new Audio(audioUrl);
+                audio.play();
+            } catch (e) {
+                console.error(e);
+            } finally {
+                loader.classList.add('hidden');
+            }
+        }
+
+        async function askConsultant() {
+            const input = document.getElementById('chat-input');
+            const msgContainer = document.getElementById('chat-messages');
+            const query = input.value.trim();
+            if (!query) return;
+
+            const userMsg = document.createElement('div');
+            userMsg.className = "bg-paper-200 p-6 rounded-[2rem] text-paper-900 ml-10 text-right self-end text-sm shadow-sm border border-paper-300 font-light leading-relaxed";
+            userMsg.innerText = query;
+            msgContainer.appendChild(userMsg);
+            input.value = "";
+
+            const loaderBubble = document.createElement('div');
+            loaderBubble.className = "bg-paper-100 p-6 rounded-[2rem] text-paper-800 mr-10 animate-pulse italic text-sm font-light border border-paper-200";
+            loaderBubble.innerText = "✨ Finding verified info via search...";
+            msgContainer.appendChild(loaderBubble);
+            msgContainer.scrollTop = msgContainer.scrollHeight;
+
+            try {
+                const systemPrompt = "You are a friendly 2026 AI Guide for Michael Haslim. Use Google Search to verify model features for everyday users. Focus on Claude 4.6 Sonnet, Perplexity, ChatGPT 5.3, and Gemini 3.1 Pro/Flash. Be honest and simple. No em-dashes.";
+                const result = await fetchGemini('gemini-2.5-flash-preview-09-2025', {
+                    contents: [{ parts: [{ text: query }] }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] },
+                    tools: [{ "google_search": {} }]
+                });
+
+                const text = result.candidates[0].content.parts[0].text;
+                const sources = result.candidates[0].groundingMetadata?.groundingAttributions || [];
+
+                loaderBubble.classList.remove('animate-pulse', 'italic');
+                loaderBubble.innerHTML = `<p class="leading-relaxed font-light">${text}</p>`;
+
+                if (sources.length > 0) {
+                    const sourceContainer = document.createElement('div');
+                    sourceContainer.className = "mt-6 pt-4 border-t border-paper-200 flex flex-wrap gap-2";
+                    sourceContainer.innerHTML = '<p class="w-full text-[10px] font-black text-paper-800/30 mb-2 tracking-widest italic uppercase text-left">Fact Checked via Web</p>';
+                    sources.forEach(s => {
+                        const link = document.createElement('a');
+                        link.href = s.web?.uri;
+                        link.target = "_blank";
+                        link.className = "source-tag hover:bg-paper-300 transition-colors";
+                        link.innerText = s.web?.title || 'Source';
+                        sourceContainer.appendChild(link);
+                    });
+                    loaderBubble.appendChild(sourceContainer);
+                }
+            } catch (e) {
+                loaderBubble.innerText = "Connection lost. Please try again.";
+            }
+            msgContainer.scrollTop = msgContainer.scrollHeight;
+        }
+
+        async function generatePlaybook() {
+            const industry = document.getElementById('industry-input').value.trim();
+            const resultDiv = document.getElementById('playbook-result');
+            const sourceDiv = document.getElementById('playbook-sources');
+            const loader = document.getElementById('playbook-loader');
+            const btnText = document.getElementById('playbook-btn-text');
+
+            if (!industry) return;
+
+            resultDiv.classList.remove('hidden');
+            resultDiv.innerHTML = `<div class="flex items-center space-x-4 py-10"><div class="loader"></div> <span class="text-lg italic text-paper-800/50 font-light tracking-wide">✨ Scouring the live market for your ${industry} plan...</span></div>`;
+            sourceDiv.innerHTML = "";
+            loader.classList.remove('hidden');
+            btnText.classList.add('hidden');
+
+            try {
+                const prompt = `Research current AI features for an everyday person doing ${industry} in early 2026. Generate a 3-step plan using models like Claude 4.6 Sonnet, Perplexity, or Gemini 3 Flash. Be specific and practical. No em-dashes. Use simple headings.`;
+                const result = await fetchGemini('gemini-2.5-flash-preview-09-2025', {
+                    contents: [{ parts: [{ text: prompt }] }],
+                    tools: [{ "google_search": {} }]
+                });
+
+                const text = result.candidates[0].content.parts[0].text;
+                const sources = result.candidates[0].groundingMetadata?.groundingAttributions || [];
+
+                resultDiv.innerHTML = `<div class="prose prose-lg text-paper-800 max-w-none font-light leading-relaxed text-left">${text}</div>`;
+                
+                if (sources.length > 0) {
+                    sourceDiv.innerHTML = '<p class="w-full text-[10px] font-black text-white/40 mb-3 tracking-[0.3em] italic px-2 uppercase text-left">Verified Sources</p>';
+                    sources.slice(0, 3).forEach(s => {
+                        const link = document.createElement('a');
+                        link.href = s.web?.uri;
+                        link.target = "_blank";
+                        link.className = "source-tag bg-white/10 text-white border-white/20 hover:bg-white/20 transition-colors";
+                        link.innerText = s.web?.title;
+                        sourceDiv.appendChild(link);
+                    });
+                }
+            } catch (e) {
+                resultDiv.innerHTML = "Error generating plan. Please try again.";
+            } finally {
+                loader.classList.add('hidden');
+                btnText.classList.remove('hidden');
+            }
+        }
+
+        function toggleChat() {
+            const panel = document.getElementById('chat-panel');
+            panel.classList.toggle('translate-x-full');
+        }
+
+        function reveal() {
+            const reveals = document.querySelectorAll(".reveal");
+            for (let i = 0; i < reveals.length; i++) {
+                const windowHeight = window.innerHeight;
+                const elementTop = reveals[i].getBoundingClientRect().top;
+                const elementVisible = 100;
+                if (elementTop < windowHeight - elementVisible) {
+                    reveals[i].classList.add("active");
+                }
+            }
+        }
+
+        window.addEventListener("scroll", reveal);
+        window.addEventListener("load", reveal);
+
+        function pcmToWav(base64Pcm, sampleRate) {
+            const pcmData = Uint8Array.from(atob(base64Pcm), c => c.charCodeAt(0));
+            const wavHeader = new ArrayBuffer(44);
+            const view = new DataView(wavHeader);
+            const writeString = (offset, string) => {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            };
+            writeString(0, 'RIFF');
+            view.setUint32(4, 36 + pcmData.length, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true); 
+            view.setUint16(22, 1, true); 
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeString(36, 'data');
+            view.setUint32(40, pcmData.length, true);
+            const blob = new Blob([wavHeader, pcmData], { type: 'audio/wav' });
+            return blob;
+        }
+
+        lucide.createIcons();
+
+        document.getElementById('chat-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') askConsultant();
+        });
+    </script>
+</body>
+</html>
