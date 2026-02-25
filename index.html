@@ -101,6 +101,39 @@
         .matrix-container {
             -webkit-overflow-scrolling: touch;
         }
+
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .animate-reveal { animation: fadeSlideUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+
+        .tool-toggle {
+            cursor: pointer;
+            padding: 8px 20px;
+            border-radius: 100px;
+            border: 1.5px solid #EAE5D9;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+            background: white;
+            color: #2D2D2D;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .tool-toggle.active {
+            background: #2D2D2D;
+            color: white;
+            border-color: #2D2D2D;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .tool-toggle:hover:not(.active) {
+            border-color: #C26D5C;
+            color: #C26D5C;
+            background: #FDFBF7;
+        }
     </style>
 </head>
 <body class="selection:bg-terracotta selection:text-white min-h-screen bg-gradient-to-b from-paper-100 to-white">
@@ -275,8 +308,43 @@
             </div>
         </div>
 
+        <!-- Recipe Finder Section -->
+        <div class="reveal mb-32">
+            <div class="mb-12 border-b border-paper-200 pb-6 text-left">
+                <h2 class="text-xs font-black uppercase tracking-[0.4em] text-paper-800/30 italic">Find Your Perfect AI Recipe</h2>
+            </div>
+            <div class="bg-white rounded-[4rem] p-12 md:p-20 border border-paper-200 shadow-sm">
+                <div class="text-center mb-14">
+                    <h2 class="text-4xl md:text-6xl font-serif text-paper-900 mb-6 italic tracking-tighter leading-tight">What do you want<br class="hidden sm:block" /> to accomplish?</h2>
+                    <p class="text-paper-800/40 font-light text-lg max-w-xl mx-auto leading-relaxed">Describe your goal in plain English. We match it to one curated AI workflow. Nothing more, nothing less.</p>
+                </div>
+
+                <div class="mb-12 text-center">
+                    <p class="text-[10px] font-black uppercase tracking-[0.35em] text-paper-800/30 mb-5">Tools I already use</p>
+                    <div id="tool-toggles" class="flex flex-wrap gap-3 justify-center"></div>
+                </div>
+
+                <div class="relative max-w-2xl mx-auto mb-4">
+                    <input type="text" id="recipe-input" placeholder="e.g. I'm buried in emails and can't keep up..."
+                        class="w-full px-10 py-7 rounded-full border border-paper-200 focus:outline-none focus:ring-2 focus:ring-terracotta/20 bg-paper-50 text-lg text-paper-900 shadow-inner placeholder:text-paper-800/20 transition-all">
+                    <button onclick="findRecipe()"
+                        class="w-full mt-4 sm:mt-0 sm:absolute sm:right-3 sm:top-3 sm:bottom-3 sm:w-auto bg-paper-900 text-white px-10 rounded-full text-[10px] font-bold uppercase tracking-[0.25em] flex items-center justify-center hover:bg-terracotta transition-all shadow-xl active:scale-95">
+                        Find My Recipe
+                    </button>
+                </div>
+
+                <div id="recipe-output" class="hidden mt-10"></div>
+
+                <div id="recipe-no-match" class="hidden text-center mt-8 text-paper-800/40 font-light text-lg italic">
+                    We could not find a recipe for that. Try rewording your goal, or use the
+                    <button onclick="document.getElementById('playbook-section').scrollIntoView({behavior:'smooth'})" class="underline decoration-paper-300 hover:text-terracotta transition-colors">AI Plan Generator</button>
+                    below for a custom response.
+                </div>
+            </div>
+        </div>
+
         <!-- Easy Playbook Section -->
-        <div class="reveal bg-paper-900 rounded-[4rem] md:rounded-[6rem] p-12 md:p-32 mb-32 shadow-2xl relative overflow-hidden text-center">
+        <div id="playbook-section" class="reveal bg-paper-900 rounded-[4rem] md:rounded-[6rem] p-12 md:p-32 mb-32 shadow-2xl relative overflow-hidden text-center">
             <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 pointer-events-none"></div>
             <div class="max-w-4xl mx-auto relative z-10">
                 <h2 class="text-4xl md:text-6xl font-serif text-white mb-8 italic tracking-tighter leading-tight">The 2026 Daily Plan.</h2>
@@ -561,10 +629,511 @@
             return blob;
         }
 
+        // ─── Recipe Engine ────────────────────────────────────────────────────────
+
+        const AVAILABLE_TOOLS = ['ChatGPT', 'Claude', 'Gemini', 'Perplexity', 'Canva', 'Midjourney'];
+        let selectedTools = new Set();
+
+        // Render tool toggle pills
+        (function initToolToggles() {
+            const container = document.getElementById('tool-toggles');
+            AVAILABLE_TOOLS.forEach(tool => {
+                const btn = document.createElement('button');
+                btn.className = 'tool-toggle';
+                btn.textContent = tool;
+                btn.addEventListener('click', () => {
+                    if (selectedTools.has(tool)) {
+                        selectedTools.delete(tool);
+                        btn.classList.remove('active');
+                    } else {
+                        selectedTools.add(tool);
+                        btn.classList.add('active');
+                    }
+                });
+                container.appendChild(btn);
+            });
+        })();
+
+        // NLP helpers
+        const STOPWORDS = new Set(['i','me','my','want','need','help','with','to','a','an','the','is','are','am','do','does','how','what','can','get','have','has','for','and','or','but','in','on','at','be','it','that','this','so','like','just','really','very','too','also','about','up','out','of','we','us','our','you','your','more','all','some','any','new','make','use','using','used','something','someone','find','look','good','better','best','great','now','time','keep','still','its','they','them','their','when','where','who','will','was','been','being','had','him','his','her','hers','one','not','no','yes','if','then','than','much','many','most','few','own','into','over','after','before','same','each','every','both','during','without','through','between','per','way','things','thing','lot','lots','give','getting','going','try','already','always','never','even','back','here','there','just','only','really','also','because','since','though','although','while','until','unless','again','further','once']);
+
+        function tokenize(str) {
+            return str.toLowerCase()
+                .replace(/[^a-z0-9\s]/g, ' ')
+                .split(/\s+/)
+                .filter(w => w.length > 2 && !STOPWORDS.has(w));
+        }
+
+        function stem(word) {
+            return word
+                .replace(/ings?$/, '')
+                .replace(/tions?$/, 't')
+                .replace(/nesses$/, '')
+                .replace(/ments?$/, '')
+                .replace(/ables?$/, '')
+                .replace(/ibles?$/, '')
+                .replace(/lys?$/, '')
+                .replace(/iers?$/, 'y')
+                .replace(/ied$/, 'y')
+                .replace(/eds?$/, '')
+                .replace(/ers?$/, '')
+                .replace(/ies$/, 'y')
+                .replace(/s$/, '');
+        }
+
+        const RECIPES = [
+            {
+                id: 'email-inbox',
+                keywords: ['email','inbox','buried','overwhelmed','emails','respond','reply','unread','messages','correspondence','mail','newsletter','spam','catch'],
+                title: 'The Inbox Zero Method',
+                trigger: 'Peace & Clarity',
+                triggerColor: 'sage',
+                stack: [
+                    { name: 'Claude 4.6 Sonnet', role: 'Drafts replies in your exact voice', url: 'https://claude.ai' },
+                    { name: 'Gemini 3 Flash', role: 'Sorts & summarizes threads by urgency', url: 'https://gemini.google.com' }
+                ],
+                description: 'You describe the gist, Claude writes the email. Gemini scans your entire inbox and groups threads by urgency in seconds. Your inbox becomes a dashboard, not a disaster.',
+                adjustments: {
+                    'Claude': 'You already have Claude — perfect for this. Just add Gemini Flash for the thread-sorting layer.',
+                    'Gemini': 'You already have Gemini — pair it with Claude for replies that actually sound like you.',
+                    'ChatGPT': 'Since you have ChatGPT, use it for drafting replies. Add Gemini Flash for the inbox triage.'
+                }
+            },
+            {
+                id: 'social-content',
+                keywords: ['social','instagram','content','post','caption','tiktok','followers','engagement','feed','grow','audience','viral','reels','stories','schedule'],
+                title: 'The Content Machine',
+                trigger: 'Visibility & Growth',
+                triggerColor: 'terracotta',
+                stack: [
+                    { name: 'Claude 4.6 Sonnet', role: 'Writes 30 days of on-brand captions', url: 'https://claude.ai' },
+                    { name: 'Canva AI', role: 'Generates the matching visuals', url: 'https://canva.com' }
+                ],
+                description: 'Claude writes a full month of captions in your voice from a single brief. Canva AI builds the matching visuals. One afternoon of work. One month of content.',
+                adjustments: {
+                    'Claude': 'You already have Claude for the copy — Canva AI handles the visuals. You are fully set.',
+                    'Canva': 'You already have Canva — add Claude to write captions that actually convert.',
+                    'ChatGPT': 'ChatGPT works well for captions. Pair it with Canva AI for a complete visual and copy workflow.',
+                    'Midjourney': 'Use Midjourney for elevated brand imagery, Canva for layouts, and Claude for the captions.'
+                }
+            },
+            {
+                id: 'photo-enhancement',
+                keywords: ['photo','image','picture','upscale','quality','blurry','enhance','resolution','edit','photography','expensive','premium','look','aesthetic','film','cinematic','visual'],
+                title: 'The Digital Leica',
+                trigger: 'Elegance & Status',
+                triggerColor: 'gold',
+                stack: [
+                    { name: 'Midjourney', role: 'Generates cinematic base images from a mood', url: 'https://midjourney.com' },
+                    { name: 'Magnific.ai', role: 'Upscales to print-quality resolution', url: 'https://magnific.ai' }
+                ],
+                description: 'Type a mood. Midjourney creates a cinematic image. Magnific makes it 16x sharper. The result looks like it cost $5,000 to shoot.',
+                adjustments: {
+                    'Midjourney': 'You already have Midjourney — just add Magnific.ai to push the output to print-ready quality.',
+                    'Claude': 'Claude can write the perfect Midjourney prompt for you. Then run it through Magnific for the final polish.'
+                }
+            },
+            {
+                id: 'research',
+                keywords: ['research','fact','information','article','study','data','source','verify','report','understand','explore','investigate','deep','dive','learn'],
+                title: 'The Deep Dive',
+                trigger: 'Confidence & Authority',
+                triggerColor: 'dustyblue',
+                stack: [
+                    { name: 'Perplexity', role: 'Finds real sources with live citations', url: 'https://perplexity.ai' },
+                    { name: 'Claude 4.6 Sonnet', role: 'Synthesizes into a clean, usable brief', url: 'https://claude.ai' }
+                ],
+                description: 'Perplexity pulls verified sources from across the web. Claude turns the raw information into a clean brief you can actually act on. No more rabbit holes.',
+                adjustments: {
+                    'Perplexity': 'You already have Perplexity — paste its results into Claude for a polished, actionable summary.',
+                    'Claude': 'You have the synthesizer — use Perplexity to gather the sources first, then bring them to Claude.',
+                    'ChatGPT': "ChatGPT's Deep Research is strong here. Combine with Perplexity for source cross-verification."
+                }
+            },
+            {
+                id: 'meeting-notes',
+                keywords: ['meeting','notes','summary','transcript','recap','call','zoom','teams','minutes','action','follow','record','transcribe','listen','conference'],
+                title: 'The Silent Scribe',
+                trigger: 'Focus & Presence',
+                triggerColor: 'sage',
+                stack: [
+                    { name: 'Gemini 3.1 Pro', role: 'Records and transcribes live meetings', url: 'https://gemini.google.com' },
+                    { name: 'Claude 4.6 Sonnet', role: 'Writes crisp action-item summaries', url: 'https://claude.ai' }
+                ],
+                description: 'Gemini listens to your meeting and transcribes it in real time. Claude reads the transcript and produces a three-bullet summary with clear action items. You stay present. AI takes the notes.',
+                adjustments: {
+                    'Gemini': 'You already have Gemini for the recording — paste the transcript into Claude for the clean summary.',
+                    'Claude': 'You already have Claude for the summary layer — add Gemini for live transcription.',
+                    'ChatGPT': 'ChatGPT summarizes transcripts well. Use Gemini to record and transcribe the meeting first.'
+                }
+            },
+            {
+                id: 'code-build',
+                keywords: ['code','app','website','build','develop','program','script','automate','software','tool','bot','api','debug','bug','error','tech','developer'],
+                title: 'The Solo Dev',
+                trigger: 'Power & Autonomy',
+                triggerColor: 'terracotta',
+                stack: [
+                    { name: 'Claude 4.6 Sonnet', role: 'Writes and debugs production code', url: 'https://claude.ai' },
+                    { name: 'Gemini 3.1 Pro', role: 'Holds your full codebase in memory', url: 'https://gemini.google.com' }
+                ],
+                description: "Claude writes production-quality code and explains every decision. Gemini's massive context window holds your entire codebase in memory, so every suggestion knows your full project.",
+                adjustments: {
+                    'Claude': 'You already have the best coding tool — add Gemini Pro for large-codebase context awareness.',
+                    'Gemini': 'You have the context layer — Claude handles writing and debugging with the highest code quality.',
+                    'ChatGPT': 'ChatGPT is a solid coder. Pair with Gemini Pro for whole-project awareness.'
+                }
+            },
+            {
+                id: 'brand-design',
+                keywords: ['brand','logo','design','identity','style','colors','font','palette','luxury','premium','look','feel','professional','business','visual'],
+                title: 'The Brand Architect',
+                trigger: 'Elegance & Authority',
+                triggerColor: 'gold',
+                stack: [
+                    { name: 'Midjourney', role: 'Generates your visual identity concepts', url: 'https://midjourney.com' },
+                    { name: 'Claude 4.6 Sonnet', role: 'Writes your brand voice and guidelines', url: 'https://claude.ai' }
+                ],
+                description: "Midjourney creates your visual identity from a mood description. Claude writes a full brand guide with tone of voice, taglines, and messaging rules. A $10,000 branding agency at your fingertips.",
+                adjustments: {
+                    'Midjourney': 'You have the visual engine — add Claude to write the brand language and guidelines.',
+                    'Claude': 'You have the voice layer — add Midjourney for the visual identity and concepts.',
+                    'Canva': 'Use Canva for applying the brand, Midjourney for the concept art, and Claude for the words.'
+                }
+            },
+            {
+                id: 'lead-outreach',
+                keywords: ['leads','outreach','sales','cold','prospect','clients','customers','pipeline','convert','pitch','agency','revenue','close','sell','selling'],
+                title: 'The Quiet Closer',
+                trigger: 'Growth & Leverage',
+                triggerColor: 'terracotta',
+                stack: [
+                    { name: 'Perplexity', role: 'Researches each prospect before contact', url: 'https://perplexity.ai' },
+                    { name: 'Claude 4.6 Sonnet', role: 'Writes hyper-personalized cold messages', url: 'https://claude.ai' }
+                ],
+                description: "Perplexity researches each prospect's company, recent news, and pain points. Claude writes a cold email so personalized it reads like you spent an hour on it. You did not.",
+                adjustments: {
+                    'Perplexity': 'You have the intel layer — paste it into Claude to turn research into compelling outreach.',
+                    'Claude': 'You have the copywriting layer — use Perplexity first to gather the prospect intel.',
+                    'ChatGPT': 'ChatGPT writes solid cold copy. Pair with Perplexity for research-backed personalization.'
+                }
+            },
+            {
+                id: 'travel-planning',
+                keywords: ['travel','trip','vacation','holiday','itinerary','flights','hotel','plan','book','weekend','getaway','destination','visit','tour','pack'],
+                title: 'The Personal Concierge',
+                trigger: 'Freedom & Ease',
+                triggerColor: 'dustyblue',
+                stack: [
+                    { name: 'Perplexity', role: 'Finds current prices and live availability', url: 'https://perplexity.ai' },
+                    { name: 'Claude 4.6 Sonnet', role: 'Builds a perfect day-by-day itinerary', url: 'https://claude.ai' }
+                ],
+                description: 'Perplexity checks live flight prices, hotel deals, and current reviews. Claude builds a personalized day-by-day itinerary with dining, activities, and packing lists. Travel planning in ten minutes.',
+                adjustments: {
+                    'Perplexity': 'You have the live search layer — paste the results to Claude to build the full itinerary.',
+                    'Claude': 'You have the planner — add Perplexity to verify real-time prices and current availability.',
+                    'ChatGPT': "ChatGPT builds great itineraries. Verify live pricing and availability with Perplexity first."
+                }
+            },
+            {
+                id: 'blog-seo',
+                keywords: ['blog','seo','article','write','writing','rank','google','traffic','website','publish','copy','words','keyword','search','organic'],
+                title: 'The Authority Builder',
+                trigger: 'Influence & Traffic',
+                triggerColor: 'sage',
+                stack: [
+                    { name: 'Perplexity', role: 'Finds top-ranking keywords and topics', url: 'https://perplexity.ai' },
+                    { name: 'Claude 4.6 Sonnet', role: 'Writes the full, human-sounding article', url: 'https://claude.ai' }
+                ],
+                description: "Perplexity analyzes what is currently ranking and why. Claude writes a long-form article that sounds like a real expert — because it knows the SEO rules and breaks them just enough to sound human.",
+                adjustments: {
+                    'Perplexity': 'You have keyword intel — pipe it to Claude to write the actual article.',
+                    'Claude': 'You have the writer — add Perplexity for keyword and topic research first.',
+                    'ChatGPT': 'ChatGPT writes solid articles. Combine with Perplexity for real-world SEO data.'
+                }
+            },
+            {
+                id: 'data-analysis',
+                keywords: ['data','spreadsheet','excel','analyze','numbers','chart','report','metrics','dashboard','finance','budget','revenue','analytics','kpi','rows'],
+                title: 'The Number Whisperer',
+                trigger: 'Clarity & Control',
+                triggerColor: 'dustyblue',
+                stack: [
+                    { name: 'ChatGPT 5.3', role: 'Runs logic on your data and builds models', url: 'https://chatgpt.com' },
+                    { name: 'Gemini 3.1 Pro', role: 'Reads entire spreadsheets without row limits', url: 'https://gemini.google.com' }
+                ],
+                description: "Upload your spreadsheet. ChatGPT runs calculations, spots anomalies, and explains trends in plain English. Gemini reads the whole file at once — no row limits, no cropping.",
+                adjustments: {
+                    'ChatGPT': 'You already have the logic engine — add Gemini to read large files without limitations.',
+                    'Gemini': 'You have the context window — add ChatGPT for the advanced math and logic operations.',
+                    'Claude': 'Claude interprets and explains data clearly. Pair with ChatGPT for the heavier number work.'
+                }
+            },
+            {
+                id: 'video-script',
+                keywords: ['video','youtube','script','film','shoot','edit','reel','short','documentary','podcast','episode','record','audio','narrate','hook'],
+                title: 'The Studio Writer',
+                trigger: 'Impact & Reach',
+                triggerColor: 'terracotta',
+                stack: [
+                    { name: 'Claude 4.6 Sonnet', role: 'Writes scripts with natural flow and hooks', url: 'https://claude.ai' },
+                    { name: 'Gemini 3 Flash', role: 'Rapid-drafts multiple script variations', url: 'https://gemini.google.com' }
+                ],
+                description: "Claude writes a full video script with hooks, transitions, and a strong call to action. Gemini quickly generates five alternate intro variations. Pick the sharpest one. Done before lunch.",
+                adjustments: {
+                    'Claude': 'You have the primary writer — use Gemini Flash to rapid-generate alternative versions.',
+                    'Gemini': 'You have rapid drafting — bring Claude in for the high-quality final polish pass.',
+                    'ChatGPT': 'ChatGPT writes solid scripts. Pair with Gemini Flash for fast variation and hook testing.'
+                }
+            },
+            {
+                id: 'customer-service',
+                keywords: ['customer','support','service','faq','questions','respond','replies','tickets','complaints','reviews','feedback','clients','chat','helpdesk'],
+                title: 'The Always-On Agent',
+                trigger: 'Loyalty & Trust',
+                triggerColor: 'sage',
+                stack: [
+                    { name: 'Claude 4.6 Sonnet', role: 'Writes empathetic, on-brand responses', url: 'https://claude.ai' },
+                    { name: 'Gemini 3 Flash', role: 'Categorizes and prioritizes tickets fast', url: 'https://gemini.google.com' }
+                ],
+                description: "Gemini reads 100 support tickets and tags them by urgency and topic in seconds. Claude writes empathetic, on-brand replies for each category. Your customers feel heard. You go home on time.",
+                adjustments: {
+                    'Claude': 'You have the best voice for customer replies — add Gemini Flash for rapid ticket sorting.',
+                    'Gemini': 'You have the sorting layer — Claude writes replies that do not sound robotic.',
+                    'ChatGPT': 'ChatGPT handles responses well. Add Gemini Flash for the triage and categorization layer.'
+                }
+            },
+            {
+                id: 'presentation',
+                keywords: ['presentation','slides','pitch','deck','powerpoint','keynote','investor','proposal','present','board','conference','show','meeting'],
+                title: 'The Pitch Architect',
+                trigger: 'Confidence & Persuasion',
+                triggerColor: 'gold',
+                stack: [
+                    { name: 'Claude 4.6 Sonnet', role: 'Structures the narrative and all slide copy', url: 'https://claude.ai' },
+                    { name: 'Canva AI', role: 'Designs the full deck from your content', url: 'https://canva.com' }
+                ],
+                description: "Claude writes every slide — headline, body, and speaker notes — around a persuasive narrative arc. Canva AI builds a polished deck around the words. Investor-ready in under an hour.",
+                adjustments: {
+                    'Claude': 'You have the narrative engine — paste the copy into Canva AI for instant visual design.',
+                    'Canva': 'You have the design tool — let Claude write the full narrative and slide copy first.',
+                    'ChatGPT': 'ChatGPT structures decks well. Pair with Canva AI for professional visual output.'
+                }
+            },
+            {
+                id: 'hiring',
+                keywords: ['hire','hiring','job','recruit','interview','resume','candidates','team','staff','employee','talent','hr','onboard','application','role'],
+                title: 'The Talent Scout',
+                trigger: 'Quality & Speed',
+                triggerColor: 'dustyblue',
+                stack: [
+                    { name: 'Claude 4.6 Sonnet', role: 'Writes job posts and interview questions', url: 'https://claude.ai' },
+                    { name: 'ChatGPT 5.3', role: 'Scores and ranks candidate responses', url: 'https://chatgpt.com' }
+                ],
+                description: "Claude writes a job post so clear that only the right candidates apply. ChatGPT scores incoming applications against your criteria and ranks the top five for you to interview. No more resume piles.",
+                adjustments: {
+                    'Claude': 'You have the writing layer — use ChatGPT to build a scoring rubric and rank applicants.',
+                    'ChatGPT': 'You have the analysis layer — Claude writes the job post that attracts the right people first.'
+                }
+            },
+            {
+                id: 'learning',
+                keywords: ['learn','study','understand','teach','explain','course','tutor','education','school','training','skill','knowledge','master','practice','class'],
+                title: 'The Private Tutor',
+                trigger: 'Growth & Mastery',
+                triggerColor: 'sage',
+                stack: [
+                    { name: 'Claude 4.6 Sonnet', role: 'Teaches in your exact learning style', url: 'https://claude.ai' },
+                    { name: 'Perplexity', role: 'Finds current courses and top resources', url: 'https://perplexity.ai' }
+                ],
+                description: "Tell Claude how you like to learn — analogies, examples, step by step. It adjusts on the fly. Perplexity finds the best current tutorials, courses, and communities. You level up faster than any class.",
+                adjustments: {
+                    'Claude': 'You have the tutor — use Perplexity to find supplementary resources and practice exercises.',
+                    'Perplexity': 'You have the research tool — bring Claude in as your Socratic learning partner.',
+                    'ChatGPT': 'ChatGPT teaches effectively. Add Perplexity for finding current, real-world resources.'
+                }
+            },
+            {
+                id: 'ad-copy',
+                keywords: ['ad','ads','advertising','copy','campaign','convert','click','meta','facebook','headline','creative','offer','funnel','marketing','promote'],
+                title: 'The Ad Alchemist',
+                trigger: 'Revenue & ROI',
+                triggerColor: 'terracotta',
+                stack: [
+                    { name: 'Claude 4.6 Sonnet', role: 'Writes high-converting ad copy and hooks', url: 'https://claude.ai' },
+                    { name: 'Midjourney', role: 'Generates scroll-stopping ad creatives', url: 'https://midjourney.com' }
+                ],
+                description: "Claude writes 20 ad headline variations targeting specific pain points. Midjourney generates the matching visual creative. Test, iterate, scale. The full ad pipeline — no creative team required.",
+                adjustments: {
+                    'Claude': 'You have the copy layer — Midjourney generates the scroll-stopping visual to match.',
+                    'Midjourney': 'You have the visual layer — Claude writes the copy that makes people stop scrolling.',
+                    'ChatGPT': 'ChatGPT writes solid ad copy. Elevate the creative side with Midjourney imagery.',
+                    'Canva': 'Canva handles layout. Midjourney for raw concepts. Claude for the copy that converts.'
+                }
+            },
+            {
+                id: 'legal-docs',
+                keywords: ['legal','contract','agreement','nda','terms','policy','lawyer','document','clause','sign','review','compliance','law','risk','liability'],
+                title: 'The Paper Shield',
+                trigger: 'Protection & Peace of Mind',
+                triggerColor: 'dustyblue',
+                stack: [
+                    { name: 'Claude 4.6 Sonnet', role: 'Reviews docs and flags risky clauses clearly', url: 'https://claude.ai' },
+                    { name: 'Perplexity', role: 'Looks up current laws and regulations', url: 'https://perplexity.ai' }
+                ],
+                description: "Paste any contract. Claude highlights risky clauses in plain English — no law degree required. Perplexity checks current regulations so the advice stays fresh. Always verify with a real lawyer for final decisions.",
+                adjustments: {
+                    'Claude': 'You have the document reviewer — Perplexity verifies the current legal landscape.',
+                    'Perplexity': 'You have the research layer — Claude translates complex legal language into plain English.'
+                }
+            },
+            {
+                id: 'budgeting',
+                keywords: ['budget','money','finance','save','spend','expenses','cost','financial','investment','savings','debt','income','wealth','bills','cash'],
+                title: 'The Financial Compass',
+                trigger: 'Security & Clarity',
+                triggerColor: 'gold',
+                stack: [
+                    { name: 'ChatGPT 5.3', role: 'Analyzes spending and models scenarios', url: 'https://chatgpt.com' },
+                    { name: 'Claude 4.6 Sonnet', role: 'Writes a jargon-free monthly action plan', url: 'https://claude.ai' }
+                ],
+                description: "Tell ChatGPT your income and expenses. It runs the numbers, models scenarios, and spots where money is leaking. Claude translates the output into a simple monthly plan you will actually stick to.",
+                adjustments: {
+                    'ChatGPT': 'You have the math brain — Claude turns the output into a plan you can live with.',
+                    'Claude': 'You have the communication layer — ChatGPT handles the number crunching and scenario modeling.',
+                    'Gemini': "Gemini can read your full financial history. Pair with ChatGPT for scenario modeling."
+                }
+            },
+            {
+                id: 'automation',
+                keywords: ['automate','workflow','repetitive','task','boring','tedious','manual','process','efficiency','productivity','streamline','routine','daily','hours'],
+                title: 'The Time Machine',
+                trigger: 'Freedom & Leverage',
+                triggerColor: 'terracotta',
+                stack: [
+                    { name: 'Claude 4.6 Sonnet', role: 'Maps your workflow and writes the logic', url: 'https://claude.ai' },
+                    { name: 'Gemini 3.1 Pro', role: 'Connects to Google Workspace to run it', url: 'https://gemini.google.com' }
+                ],
+                description: "Describe the repetitive task to Claude. It designs the automation logic and writes the code. Gemini connects to your Gmail, Sheets, and Drive to actually execute it. The task you do daily gets done while you sleep.",
+                adjustments: {
+                    'Claude': 'You have the logic designer — pair with Gemini to connect directly to Google Workspace.',
+                    'Gemini': 'You have the execution layer — Claude designs the logic and writes the automation code.',
+                    'ChatGPT': 'ChatGPT designs automation workflows well. Pair with Gemini for Google Workspace execution.'
+                }
+            }
+        ];
+
+        function scoreRecipe(recipe, queryTokens) {
+            const queryStems = queryTokens.map(stem);
+            const recipeStems = recipe.keywords.map(stem);
+            let score = 0;
+            for (let i = 0; i < queryTokens.length; i++) {
+                const token = queryTokens[i];
+                const tokenStem = queryStems[i];
+                for (let j = 0; j < recipe.keywords.length; j++) {
+                    const keyword = recipe.keywords[j];
+                    const keywordStem = recipeStems[j];
+                    if (token === keyword) {
+                        score += 10;
+                    } else if (tokenStem === keywordStem && tokenStem.length > 3) {
+                        score += 7;
+                    } else if (token.length > 3 && keyword.length > 3 && (token.includes(keyword) || keyword.includes(token))) {
+                        score += 4;
+                    }
+                }
+            }
+            return score;
+        }
+
+        function findRecipe() {
+            const query = document.getElementById('recipe-input').value.trim();
+            const output = document.getElementById('recipe-output');
+            const noMatch = document.getElementById('recipe-no-match');
+            if (!query) return;
+
+            const tokens = tokenize(query);
+            output.classList.add('hidden');
+            noMatch.classList.add('hidden');
+
+            if (tokens.length === 0) { noMatch.classList.remove('hidden'); return; }
+
+            let best = null, bestScore = 0;
+            for (const recipe of RECIPES) {
+                const score = scoreRecipe(recipe, tokens);
+                if (score > bestScore) { bestScore = score; best = recipe; }
+            }
+
+            if (best && bestScore >= 4) {
+                output.innerHTML = renderRecipeCard(best, [...selectedTools]);
+                output.classList.remove('hidden');
+                lucide.createIcons();
+                output.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } else {
+                noMatch.classList.remove('hidden');
+            }
+        }
+
+        function renderRecipeCard(recipe, tools) {
+            const colorMap = {
+                terracotta: { bg: 'bg-terracotta/10', text: 'text-terracotta', border: 'border-terracotta/20' },
+                sage:       { bg: 'bg-sage/10',       text: 'text-sage',       border: 'border-sage/20' },
+                dustyblue:  { bg: 'bg-dustyblue/10',  text: 'text-dustyblue',  border: 'border-dustyblue/20' },
+                gold:       { bg: 'bg-gold/10',        text: 'text-gold',       border: 'border-gold/20' },
+            };
+            const c = colorMap[recipe.triggerColor] || colorMap.terracotta;
+
+            let personalNote = '';
+            for (const tool of tools) {
+                if (recipe.adjustments && recipe.adjustments[tool]) {
+                    personalNote = recipe.adjustments[tool];
+                    break;
+                }
+            }
+
+            const stackHTML = recipe.stack.map(tool => `
+                <a href="${tool.url}" target="_blank" rel="noopener noreferrer"
+                    class="flex items-start gap-5 p-6 rounded-[2rem] border border-paper-200 hover:border-terracotta/30 hover:shadow-md transition-all group bg-white">
+                    <div class="flex-1 min-w-0">
+                        <p class="font-serif font-bold text-paper-900 text-lg italic mb-1">${tool.name}</p>
+                        <p class="text-sm text-paper-800/50 font-light leading-snug">${tool.role}</p>
+                    </div>
+                    <i data-lucide="arrow-up-right" class="w-5 h-5 text-paper-800/20 group-hover:text-terracotta transition-colors mt-1 flex-shrink-0"></i>
+                </a>
+            `).join('');
+
+            const personalHTML = personalNote ? `
+                <div class="mt-8 p-7 rounded-[2rem] bg-sage/5 border border-sage/20">
+                    <p class="text-[9px] font-black uppercase tracking-[0.35em] text-sage mb-2.5">Personalized For Your Stack</p>
+                    <p class="text-paper-800/70 font-light leading-relaxed">${personalNote}</p>
+                </div>
+            ` : '';
+
+            return `
+                <div class="bg-paper-50 rounded-[3rem] p-10 md:p-14 border border-paper-200 shadow-sm animate-reveal">
+                    <div class="flex flex-wrap items-center gap-3 mb-8">
+                        <span class="px-5 py-2 rounded-full text-[9px] font-black uppercase tracking-[0.3em] ${c.bg} ${c.text} border ${c.border}">${recipe.trigger}</span>
+                        <span class="text-paper-800/20 text-[9px] font-bold uppercase tracking-widest">Your Recipe</span>
+                    </div>
+                    <h3 class="text-4xl md:text-5xl font-serif font-bold text-paper-900 mb-5 italic tracking-tight leading-none">${recipe.title}</h3>
+                    <p class="text-paper-800/60 font-light text-lg leading-relaxed mb-10">${recipe.description}</p>
+                    <p class="text-[9px] font-black uppercase tracking-[0.35em] text-paper-800/30 mb-4">Your Stack</p>
+                    <div class="grid sm:grid-cols-2 gap-3">
+                        ${stackHTML}
+                    </div>
+                    ${personalHTML}
+                </div>
+            `;
+        }
+
+        // ─── End Recipe Engine ─────────────────────────────────────────────────────
+
         lucide.createIcons();
 
         document.getElementById('chat-input').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') askConsultant();
+        });
+        document.getElementById('recipe-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') findRecipe();
         });
     </script>
 </body>
