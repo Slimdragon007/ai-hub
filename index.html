@@ -365,6 +365,51 @@
             </div>
         </div>
 
+        <!-- Claude Agent Demo Section -->
+        <div id="claude-agent-section" class="reveal mb-32">
+            <div class="mb-12 border-b border-paper-200 pb-6 text-left">
+                <h2 class="text-xs font-black uppercase tracking-[0.4em] text-paper-800/30 italic">Claude Agent SDK — Live Demo</h2>
+            </div>
+            <div class="bg-white rounded-[4rem] p-12 md:p-20 border border-paper-200 shadow-sm">
+                <div class="text-center mb-14">
+                    <div class="inline-flex items-center gap-3 bg-dustyblue/10 text-dustyblue px-6 py-2.5 rounded-full mb-8 border border-dustyblue/20">
+                        <span class="w-2 h-2 rounded-full bg-dustyblue animate-pulse"></span>
+                        <span class="text-xs font-bold uppercase tracking-[0.2em]">Powered by claude-sonnet-4-6</span>
+                    </div>
+                    <h2 class="text-4xl md:text-6xl font-serif text-paper-900 mb-6 italic tracking-tighter leading-tight">Model Advisor Agent</h2>
+                    <p class="text-paper-800/40 font-light text-lg max-w-xl mx-auto leading-relaxed">Ask which AI model is right for your task. This agent uses custom tools to look up specs, compare models, and give you a recommendation — showing you the agent loop live.</p>
+                </div>
+
+                <!-- Setup notice (shown until server is running) -->
+                <div id="agent-setup-notice" class="mb-10 p-8 rounded-[2rem] bg-amber-50 border border-amber-200 text-amber-900">
+                    <p class="text-sm font-bold mb-2">Start the agent server first</p>
+                    <p class="text-sm font-light leading-relaxed">Run <code class="bg-amber-100 px-2 py-0.5 rounded font-mono text-xs">npm install &amp;&amp; node server.js</code> in the project directory, then add your Anthropic API key to a <code class="bg-amber-100 px-2 py-0.5 rounded font-mono text-xs">.env</code> file (see <code class="bg-amber-100 px-2 py-0.5 rounded font-mono text-xs">.env.example</code>).</p>
+                </div>
+
+                <!-- Input -->
+                <div class="relative max-w-2xl mx-auto mb-4">
+                    <input type="text" id="agent-input" placeholder="e.g. Which model is best for writing code?"
+                        class="w-full px-10 py-7 rounded-full border border-paper-200 focus:outline-none focus:ring-2 focus:ring-dustyblue/20 bg-paper-50 text-lg text-paper-900 shadow-inner placeholder:text-paper-800/20 transition-all">
+                    <button onclick="askAgent()"
+                        class="w-full mt-4 sm:mt-0 sm:absolute sm:right-3 sm:top-3 sm:bottom-3 sm:w-auto bg-paper-900 text-white px-10 rounded-full text-[10px] font-bold uppercase tracking-[0.25em] flex items-center justify-center hover:bg-dustyblue transition-all shadow-xl active:scale-95">
+                        Ask Agent
+                    </button>
+                </div>
+
+                <!-- Example prompts -->
+                <div class="flex flex-wrap gap-2 justify-center max-w-2xl mx-auto mb-10">
+                    <button onclick="document.getElementById('agent-input').value=this.innerText;askAgent()" class="px-4 py-2 rounded-full border border-paper-200 text-xs text-paper-800/50 hover:border-dustyblue hover:text-dustyblue transition-all bg-paper-50">Which model is best for coding?</button>
+                    <button onclick="document.getElementById('agent-input').value=this.innerText;askAgent()" class="px-4 py-2 rounded-full border border-paper-200 text-xs text-paper-800/50 hover:border-dustyblue hover:text-dustyblue transition-all bg-paper-50">Compare Sonnet vs Opus</button>
+                    <button onclick="document.getElementById('agent-input').value=this.innerText;askAgent()" class="px-4 py-2 rounded-full border border-paper-200 text-xs text-paper-800/50 hover:border-dustyblue hover:text-dustyblue transition-all bg-paper-50">Cheapest model for high-volume tasks?</button>
+                </div>
+
+                <!-- Output -->
+                <div id="agent-output" class="hidden mt-10 bg-paper-50 rounded-[2.5rem] border border-paper-200 p-10 md:p-14 text-paper-800 font-light leading-relaxed text-lg">
+                    <!-- Agent response goes here -->
+                </div>
+            </div>
+        </div>
+
         <!-- Sticky Column Matrix -->
         <div id="matrix-section" class="reveal bg-white rounded-[3.5rem] border border-paper-200 shadow-2xl overflow-hidden mb-32">
             <div class="p-12 border-b border-paper-200 bg-paper-50 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 text-left">
@@ -628,6 +673,74 @@
             const blob = new Blob([wavHeader, pcmData], { type: 'audio/wav' });
             return blob;
         }
+
+        // ─── Claude Agent SDK Integration ────────────────────────────────────────
+        // Talks to the Node.js backend (server.js) which runs the agent loop.
+        // The loop: user prompt → Claude picks tools → tools run → Claude answers.
+
+        async function askAgent() {
+            const input = document.getElementById('agent-input');
+            const output = document.getElementById('agent-output');
+            const notice = document.getElementById('agent-setup-notice');
+            const prompt = input.value.trim();
+            if (!prompt) return;
+
+            // Show loading state
+            output.classList.remove('hidden');
+            output.innerHTML = `
+                <div class="flex items-center gap-4 animate-pulse">
+                    <div class="w-3 h-3 rounded-full bg-dustyblue"></div>
+                    <span class="italic text-paper-800/50 font-light">Agent is thinking — checking tools...</span>
+                </div>`;
+
+            try {
+                const res = await fetch('http://localhost:3000/api/agent', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt })
+                });
+
+                // Hide setup notice once the server responds
+                notice.classList.add('hidden');
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error || 'Server error');
+                }
+
+                const data = await res.json();
+
+                // Build the tool trace (teaches what the agent actually did)
+                const toolTrace = data.tools_used && data.tools_used.length > 0
+                    ? `<div class="mt-8 pt-6 border-t border-paper-200">
+                        <p class="text-[9px] font-black uppercase tracking-[0.35em] text-paper-800/30 mb-3">Agent tool trace — ${data.rounds} round${data.rounds !== 1 ? 's' : ''}</p>
+                        <div class="flex flex-wrap gap-2">
+                            ${data.tools_used.map(t => `
+                                <span class="px-3 py-1 rounded-full bg-dustyblue/10 text-dustyblue text-[10px] font-bold border border-dustyblue/20">
+                                    ${t.tool}(${Object.keys(t.input).map(k => `${k}: "${String(t.input[k]).slice(0,20)}"`).join(', ')})
+                                </span>`).join('')}
+                        </div>
+                      </div>`
+                    : `<div class="mt-6 pt-4 border-t border-paper-200">
+                        <p class="text-[9px] font-black uppercase tracking-[0.35em] text-paper-800/30">No tools needed — Claude answered directly</p>
+                       </div>`;
+
+                output.innerHTML = `
+                    <p class="leading-relaxed whitespace-pre-wrap">${data.response}</p>
+                    ${toolTrace}`;
+
+            } catch (e) {
+                output.innerHTML = `
+                    <p class="text-terracotta font-medium">${e.message.includes('Failed to fetch')
+                        ? 'Cannot reach the agent server. Make sure <code class="bg-paper-100 px-1 rounded text-xs font-mono">node server.js</code> is running on port 3000.'
+                        : e.message}</p>`;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const agentInput = document.getElementById('agent-input');
+            if (agentInput) agentInput.addEventListener('keypress', e => { if (e.key === 'Enter') askAgent(); });
+        });
 
         // ─── Recipe Engine ────────────────────────────────────────────────────────
 
