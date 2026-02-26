@@ -306,6 +306,15 @@
                 <p class="text-sm text-paper-800/50 leading-relaxed mb-6 font-light">Open alternatives focused on privacy and high-end logical math problems.</p>
                 <span class="text-[9px] font-bold text-slate-600 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded">LOGIC FOCUSED</span>
             </div>
+
+            <div class="reveal bg-white p-8 rounded-[2.5rem] border border-paper-200 shadow-sm hover:shadow-xl transition-all active:scale-95">
+                <div class="w-12 h-12 bg-violet-100 text-violet-600 rounded-2xl flex items-center justify-center mb-6">
+                    <i data-lucide="pen-line" class="w-6 h-6"></i>
+                </div>
+                <h4 class="font-serif font-bold text-paper-900 mb-2">Figma AI</h4>
+                <p class="text-sm text-paper-800/50 leading-relaxed mb-6 font-light">The design standard. AI-assisted layouts, auto-annotations, and instant design-to-code handoff for teams and solo builders.</p>
+                <span class="text-[9px] font-bold text-violet-600 uppercase tracking-widest bg-violet-50 px-2 py-1 rounded">DESIGN FOCUSED</span>
+            </div>
         </div>
 
         <!-- Recipe Finder Section -->
@@ -654,7 +663,7 @@
 
         // ─── Recipe Engine ────────────────────────────────────────────────────────
 
-        const AVAILABLE_TOOLS = ['ChatGPT', 'Claude', 'Gemini', 'Perplexity', 'Canva', 'Midjourney'];
+        const AVAILABLE_TOOLS = ['ChatGPT', 'Claude', 'Gemini', 'Perplexity', 'Canva', 'Midjourney', 'Figma'];
         let selectedTools = new Set();
 
         // Render tool toggle pills
@@ -737,7 +746,8 @@
                     'Claude': 'You already have Claude for the copy — Canva AI handles the visuals. You are fully set.',
                     'Canva': 'You already have Canva — add Claude to write captions that actually convert.',
                     'ChatGPT': 'ChatGPT works well for captions. Pair it with Canva AI for a complete visual and copy workflow.',
-                    'Midjourney': 'Use Midjourney for elevated brand imagery, Canva for layouts, and Claude for the captions.'
+                    'Midjourney': 'Use Midjourney for elevated brand imagery, Canva for layouts, and Claude for the captions.',
+                    'Figma': 'Use Figma to design your post templates and maintain brand consistency. Claude writes the captions, Figma keeps every post on-brand.'
                 }
             },
             {
@@ -821,7 +831,8 @@
                 adjustments: {
                     'Midjourney': 'You have the visual engine — add Claude to write the brand language and guidelines.',
                     'Claude': 'You have the voice layer — add Midjourney for the visual identity and concepts.',
-                    'Canva': 'Use Canva for applying the brand, Midjourney for the concept art, and Claude for the words.'
+                    'Canva': 'Use Canva for applying the brand, Midjourney for the concept art, and Claude for the words.',
+                    'Figma': 'You have the best design tool available. Build your brand system directly in Figma, use Claude to write the voice guidelines, and export assets for any platform.'
                 }
             },
             {
@@ -940,7 +951,8 @@
                 adjustments: {
                     'Claude': 'You have the narrative engine — paste the copy into Canva AI for instant visual design.',
                     'Canva': 'You have the design tool — let Claude write the full narrative and slide copy first.',
-                    'ChatGPT': 'ChatGPT structures decks well. Pair with Canva AI for professional visual output.'
+                    'ChatGPT': 'ChatGPT structures decks well. Pair with Canva AI for professional visual output.',
+                    'Figma': 'Figma is the premium choice for pitch decks. Claude writes the narrative and slide copy, then you build a pixel-perfect deck in Figma that no template can match.'
                 }
             },
             {
@@ -991,7 +1003,8 @@
                     'Claude': 'You have the copy layer — Midjourney generates the scroll-stopping visual to match.',
                     'Midjourney': 'You have the visual layer — Claude writes the copy that makes people stop scrolling.',
                     'ChatGPT': 'ChatGPT writes solid ad copy. Elevate the creative side with Midjourney imagery.',
-                    'Canva': 'Canva handles layout. Midjourney for raw concepts. Claude for the copy that converts.'
+                    'Canva': 'Canva handles layout. Midjourney for raw concepts. Claude for the copy that converts.',
+                    'Figma': 'Figma lets you build production-ready ad creatives with full brand control. Claude writes the headline variations, Figma perfects the layout before it ever goes to the ad manager.'
                 }
             },
             {
