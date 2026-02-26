@@ -463,9 +463,13 @@
         }
 
         async function playAudioSummary() {
+            if (!apiKey) {
+                alert("Live Audio requires a Gemini API key. Add yours to the apiKey variable in index.html to enable this feature.");
+                return;
+            }
             const loader = document.getElementById('tts-loader');
             const text = "Welcome to your 2026 AI guide. We have simplified the noise so you can find the right helper for your family and your life. This hub uses live verified data to give you the truth without the marketing hype. No em-dashes here.";
-            
+
             loader.classList.remove('hidden');
 
             try {
@@ -478,7 +482,7 @@
                 });
 
                 const audioData = result.candidates[0].content.parts[0].inlineData.data;
-                const audioBlob = pcmToWav(audioData, 24000); 
+                const audioBlob = pcmToWav(audioData, 24000);
                 const audioUrl = URL.createObjectURL(audioBlob);
                 const audio = new Audio(audioUrl);
                 audio.play();
@@ -500,6 +504,15 @@
             userMsg.innerText = query;
             msgContainer.appendChild(userMsg);
             input.value = "";
+
+            if (!apiKey) {
+                const noKeyMsg = document.createElement('div');
+                noKeyMsg.className = "bg-paper-100 p-6 rounded-[2rem] text-paper-800 mr-10 text-sm font-light border border-paper-200 leading-relaxed";
+                noKeyMsg.innerHTML = "The live Strategy Hub requires a Gemini API key. To enable it, add your key to the <code class='bg-paper-200 px-1.5 py-0.5 rounded text-xs'>apiKey</code> variable in <code class='bg-paper-200 px-1.5 py-0.5 rounded text-xs'>index.html</code>. Get a free key at <a href='https://aistudio.google.com' target='_blank' class='underline text-terracotta'>aistudio.google.com</a>.";
+                msgContainer.appendChild(noKeyMsg);
+                msgContainer.scrollTop = msgContainer.scrollHeight;
+                return;
+            }
 
             const loaderBubble = document.createElement('div');
             loaderBubble.className = "bg-paper-100 p-6 rounded-[2rem] text-paper-800 mr-10 animate-pulse italic text-sm font-light border border-paper-200";
@@ -549,6 +562,12 @@
             const btnText = document.getElementById('playbook-btn-text');
 
             if (!industry) return;
+
+            if (!apiKey) {
+                resultDiv.classList.remove('hidden');
+                resultDiv.innerHTML = `<div class="text-center py-10 text-paper-800/50 font-light leading-relaxed">The Plan Generator requires a Gemini API key. Add yours to the <code class="bg-paper-200 px-1.5 py-0.5 rounded text-sm">apiKey</code> variable in <code class="bg-paper-200 px-1.5 py-0.5 rounded text-sm">index.html</code> to enable live plan generation.</div>`;
+                return;
+            }
 
             resultDiv.classList.remove('hidden');
             resultDiv.innerHTML = `<div class="flex items-center space-x-4 py-10"><div class="loader"></div> <span class="text-lg italic text-paper-800/50 font-light tracking-wide">✨ Scouring the live market for your ${industry} plan...</span></div>`;
